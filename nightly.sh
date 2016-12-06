@@ -10,7 +10,7 @@ BDIR=(
 /usr/local/WowzaStreamingEngine/content
 /var/www/v3)
 
-OutputDir=/usr/sbin/backups/
+LOGDIR=/usr/sbin/backups/logs
 ########################################################################
 
 if [ ${#BDIR[@]} -ne ${#ODIR[@]} ];
@@ -29,6 +29,6 @@ do
 	#echo $P
 	echo ${ODIR[$var]}
       	# transfer
-      	rsync $OPTS $P ${ODIR[$var]}/Current | $OutputDir-$BACKUPDIR.txt
+      	rsync $OPTS $P ${ODIR[$var]}/Current | $LOGDIR/$BACKUPDIR.txt
 	((var++))      	
 done
