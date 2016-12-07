@@ -40,7 +40,7 @@ do
 	echo "" >> $LOGDIR/$BACKUPDIR.txt
 
       	# transfer
-      	rsync $OPTS $P ${ODIR[$var]}/Current >> $LOGDIR/$BACKUPDIR.txt
+      	rsync $OPTS $P ${ODIR[$var]}/current >> $LOGDIR/$BACKUPDIR.txt
 	echo "" >> $LOGDIR/$BACKUPDIR.txt
 	
 	((var++))      	
