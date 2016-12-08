@@ -9,7 +9,7 @@ then
 	mkdir /mnt/observe
 fi 
 
-echo "Mounding drive"
+echo "Mounting drive"
 
 #Mount the drive
 if [ ! -d /mnt/observe/backups ] 
