@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # directories to backup
-# for each directory to be backed up you must input an output directory,
+# for each directory to be backed up you must add an output directory,
 ODIR=(
 /mnt/observe/backups/$HOSTNAME/content
 /mnt/observe/backups/$HOSTNAME/www)
@@ -11,7 +11,35 @@ BDIR=(
 /var/www/v3)
 
 LOGDIR=/usr/sbin/backups/logs
+
+ELKADDR=https://av-metrics.byu.edu/backups/observation
 ########################################################################
+
+
+DATE=`date +%Y-%m-%dT%H:%M:%S%z`
+
+DATA={"'timestamp'":"'"$DATE"'","'hostname'":"'"$HOSTNAME"'","'event'":"'Starting Backup'"}
+curl -X POST -d $DATA $ELKADDR
+
+# Check for stale file handle
+statresult=`stat /mnt/observe 2>&1 | grep -i "stale"`
+if [ "${statresult}" != "" ]; then
+	umount -f /mnt/observe
+	mount mount -t nfs files.byu.edu:ObservationSystems /mnt/observe
+	
+	#check for stale mount again - if it's still bad, report an error. 
+	statresult=`stat /mnt/observe 2>&1 | grep -i "stale"`
+
+	if [ "${statresult}" != "" ]; then
+		#Report to ELKi
+
+		DATE=`date +%Y-%m-%dT%H:%M:%S%z`
+
+		DATA={"'timestamp'":"'"$DATE"'","'hostname'":"'"$HOSTNAME"'","'event'":"'Stale File Handle'"}
+		curl -X POST -d $DATA $ELKADDR
+		exit -1
+	fi
+fi
 
 if [ ! -d $LOGDIR ]
 then
@@ -45,3 +73,10 @@ do
 	
 	((var++))      	
 done
+
+
+DATE=`date +%Y-%m-%dT%H:%M:%S%z`
+
+DATA={"'timestamp'":"'"$DATE"'","'hostname'":"'"$HOSTNAME"'","'event'":"'Backup Completed.'"}
+curl -X POST -d $DATA $ELKADDR
+
