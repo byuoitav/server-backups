@@ -12,7 +12,7 @@ BDIR=(
 
 LOGDIR=/usr/sbin/backups/logs
 
-ELKADDR=https://avmetrics.byu.edu/backups/observation
+ELKADDR=http://avmetrics.byu.edu/backups/observation
 ########################################################################
 
 
