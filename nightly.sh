@@ -18,7 +18,7 @@ ELKADDR=https://avmetrics.byu.edu/backups/observation
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
 
-DATA='{"timestamp"':'"'$DATE'"','"hostname"':'"'$HOSTNAME'"','"event"':'"Stale File Handle"}'
+DATA='{"timestamp"':'"'$DATE'"','"hostname"':'"'$HOSTNAME'"','"event"':'"Starting Backup"}'
 curl -X POST -d $DATA $ELKADDR
 
 # Check for stale file handle
@@ -35,7 +35,7 @@ if [ "${statresult}" != "" ]; then
 
 		DATE=`date +%Y-%m-%dT%H:%M:%S%z`
 
-		DATA={"'timestamp'":"'"$DATE"'","'hostname'":"'"$HOSTNAME"'","'event'":"'Stale File Handle'"}
+		DATA='{"timestamp"':'"'$DATE'"','"hostname"':'"'$HOSTNAME'"','"event"':'"Stale File Handle"}'
 		curl -X POST -d $DATA $ELKADDR
 		exit -1
 	fi
@@ -77,6 +77,6 @@ done
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
 
-DATA={"'timestamp'":"'"$DATE"'","'hostname'":"'"$HOSTNAME"'","'event'":"'Backup Completed.'"}
+DATA='{"timestamp"':'"'$DATE'"','"hostname"':'"'$HOSTNAME'"','"event"':'"Backup Completed."}'
 curl -X POST -d $DATA $ELKADDR
 
