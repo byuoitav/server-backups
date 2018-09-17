@@ -89,6 +89,7 @@ BACKUPDIR=`date +%Y-%m-%d:%H:%M:%S`
 export PATH=$PATH:/bin:/usr/bin:/usr/local/bin
 VAR=0
 
+# Backup files and Archive deleted files in incremental folder
 for P in ${BDIR[@]}
 do
 	INCREMENTALDIR=${ODIR[$var]}/incremental/$BACKUPDIR
@@ -110,23 +111,26 @@ done
 # Cleaning up old backups
 for R in ${ODIR[@]}
 do
-	INCREMENTALOUTDIR=${ODIR[$var]}/incremental
-	OPTS="-maxdepth 1 -type d -mtime +$RETDAYS"
+        INCREMENTALOUTDIR=$R/incremental
+        OPTS="-maxdepth 1 -type d -mtime +$RETDAYS"
 
-	#echo $R
-	echo ${ODIR[$var]}
-	echo "-------------Old Deprecated Incrementals >> $INCREMENTALOUTDIR--------------" >> $LOGDIR/$BACKUPDIR.txt
-	echo "" >> $LOGDIR/$BACKUPDIR.txt
+        #echo $R
+        echo $INCREMENTALOUTDIR
+        echo "-------------Checking $R---------------" >> $LOGDIR/$BACKUPDIR.txt
+        echo "-------------Old Deprecated Incrementals >> $INCREMENTALOUTDIR--------------" >> $LOGDIR/$BACKUPDIR.txt
+        echo "" >> $LOGDIR/$BACKUPDIR.txt
 
-      	# find all the incrementals that are older than the retention period
-      	REMOVALDIR=`find $INCREMENTALOUTDIR $OPTS` 
-	echo ${REMOVALDIR} >> $LOGDIR/$BACKUPDIR.txt
-	
-	echo "" >> $LOGDIR/$BACKUPDIR.txt
+        # find all the incrementals that are older than the retention period
+        REMOVE=( $(find $INCREMENTALOUTDIR $OPTS | sort) )
+        for i in ${REMOVE[@]}; do
+                echo "Removing $i" >> $LOGDIR/$BACKUPDIR.txt
+                rm -rf $i
+        done
+        echo "" >> $LOGDIR/$BACKUPDIR.txt
 
-	# Remove the folders and files older than the retension days
+        # Remove the folders and files older than the retension days
 
-	((var++))      	
+        ((var++))
 done
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
