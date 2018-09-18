@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # directories to backup
-# for each directory to be backed up you must add an output directory,
+# for each directory to be backed up you must add an output directory
+# These top ones will backup just the application and content folders
+# use these only on Media servers and not on the main application server
+#
 ODIR=(
 /mnt/observe/backups/$HOSTNAME/content
 /mnt/observe/backups/$HOSTNAME/www)
@@ -11,6 +14,8 @@ BDIR=(
 /var/www/v3)
 
 # On the main cluster server: comment out the above lines and uncomment the following lines: 
+# These lines contain the correct lines for backing up everything including the database backups:
+#
 #ODIR=(
 #/mnt/observe/backups/$HOSTNAME/content
 #/mnt/observe/backups/$HOSTNAME/www
