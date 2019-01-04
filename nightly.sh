@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # directories to backup
-# for each directory to be backed up you must add an output directory,
+# for each directory to be backed up you must add an output directory
+# These top ones will backup just the application and content folders
+# use these only on Media servers and not on the main application server
+#
 ODIR=(
 /mnt/observe/backups/$HOSTNAME/content
 /mnt/observe/backups/$HOSTNAME/www)
@@ -11,6 +14,8 @@ BDIR=(
 /var/www/v3)
 
 # On the main cluster server: comment out the above lines and uncomment the following lines: 
+# These lines contain the correct lines for backing up everything including the database backups:
+#
 #ODIR=(
 #/mnt/observe/backups/$HOSTNAME/content
 #/mnt/observe/backups/$HOSTNAME/www
@@ -89,6 +94,7 @@ BACKUPDIR=`date +%Y-%m-%d:%H:%M:%S`
 export PATH=$PATH:/bin:/usr/bin:/usr/local/bin
 VAR=0
 
+# Backup files and Archive deleted files in incremental folder
 for P in ${BDIR[@]}
 do
 	INCREMENTALDIR=${ODIR[$var]}/incremental/$BACKUPDIR
@@ -110,23 +116,26 @@ done
 # Cleaning up old backups
 for R in ${ODIR[@]}
 do
-	INCREMENTALOUTDIR=${ODIR[$var]}/incremental
-	OPTS="-maxdepth 1 -type d -mtime +$RETDAYS"
+        INCREMENTALOUTDIR=$R/incremental
+        OPTS="-maxdepth 1 -type d -mtime +$RETDAYS"
 
-	#echo $R
-	echo ${ODIR[$var]}
-	echo "-------------Old Deprecated Incrementals >> $INCREMENTALOUTDIR--------------" >> $LOGDIR/$BACKUPDIR.txt
-	echo "" >> $LOGDIR/$BACKUPDIR.txt
+        #echo $R
+        echo $INCREMENTALOUTDIR
+        echo "-------------Checking $R---------------" >> $LOGDIR/$BACKUPDIR.txt
+        echo "-------------Old Deprecated Incrementals >> $INCREMENTALOUTDIR--------------" >> $LOGDIR/$BACKUPDIR.txt
+        echo "" >> $LOGDIR/$BACKUPDIR.txt
 
-      	# find all the incrementals that are older than the retention period
-      	REMOVALDIR=`find $INCREMENTALOUTDIR $OPTS` 
-	echo ${REMOVALDIR} >> $LOGDIR/$BACKUPDIR.txt
-	
-	echo "" >> $LOGDIR/$BACKUPDIR.txt
+        # find all the incrementals that are older than the retention period
+        REMOVE=( $(find $INCREMENTALOUTDIR $OPTS | sort) )
+        for i in ${REMOVE[@]}; do
+                echo "Removing $i" >> $LOGDIR/$BACKUPDIR.txt
+                rm -rf $i
+        done
+        echo "" >> $LOGDIR/$BACKUPDIR.txt
 
-	# Remove the folders and files older than the retension days
+        # Remove the folders and files older than the retension days
 
-	((var++))      	
+        ((var++))
 done
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
