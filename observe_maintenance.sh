@@ -19,7 +19,10 @@ export PATH=$PATH:/bin:/usr/bin:/usr/local/bin
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
 
 # Make sure that the log path has already been created, if not create it
-
+if [ ! -d $LOGDIR ]
+then
+	mkdir $LOGDIR
+fi
 
 # Check to see if tmp files are open on the server in the Wowza content path
 WOWZAOPEN=`lsof | grep $ODIR`
@@ -58,7 +61,7 @@ if [${WOWZAOPEN} != "" -a ${WOWZAOPEN} == *"java"*]; then
 		SERVICETEST=`curl localhost:1935`
 		if [$SERVICETEST == *"Wowza Streaming"*]; then
 			echo "Wowza reboot was successful"  >> $LOGDIR/$LOGNAME.txt
-		el 
+		else
 			echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
 			echo "Please check on the server and the service"  >> $LOGDIR/$LOGNAME.txt
 		fi
