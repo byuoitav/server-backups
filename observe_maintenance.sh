@@ -10,7 +10,7 @@ LOGDIR=/usr/sbin/maintenance/logs
 
 LOGNAME=`date +%Y-%m-%d:%H:%M:%S` 
 
-ODIR=`\/usr\/local\/Wowza.*\/content\/valt_recordings\/video\/.*\/*.tmp`
+ODIR='\/usr\/local\/Wowza.*\/content\/valt_recordings\/video\/.*\/*.tmp'
 
 ##################################################################
 
@@ -25,7 +25,7 @@ then
 fi
 
 # Check to see if tmp files are open on the server in the Wowza content path
-WOWZAOPEN=`lsof | grep $ODIR`
+WOWZAOPEN='lsof -nP | grep $ODIR'
 
 touch $LOGDIR/$LOGNAME.txt
 echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
