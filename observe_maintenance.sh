@@ -37,7 +37,7 @@ echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
 # If there are open tmp files on the system, restart Wowza and check that Wowza is active
 # Currently on the servers, we can't check using standard service check because it is broken
 # We are going to check using the Wowza HTTP API to make sure that the service is running 
-if [ ${WOWZAOPEN} != "" -a ${WOWZAOPEN} == *"java"* ]; then
+if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 	echo "There are tmp files open....."  >> $LOGDIR/$LOGNAME.txt
 	echo "Checking to see they are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
 	echo "------------------------------------------" >> $LOGDIR/$LOGNAME.txt 
@@ -64,7 +64,11 @@ if [ ${WOWZAOPEN} != "" -a ${WOWZAOPEN} == *"java"* ]; then
 		else
 			echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
 			echo "Please check on the server and the service"  >> $LOGDIR/$LOGNAME.txt
+		fi
+	fi
 else
+	echo "" >> $LOGDIR/$LOGNAME.txt
 	echo "No current tmp files are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
-
+	echo "" >> $LOGDIR/$LOGNAME.txt
+fi
 
