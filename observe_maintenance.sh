@@ -4,7 +4,11 @@
 # This will restart Wowza Streaming Engine if it finds files open 
 # Set this up with Cron to function after hours with root user access
 #
-#
+# Will close files that currently open by Wowza(Java) in the Wowza Path
+
+
+export PATH=$PATH:/bin:/usr/bin:/usr/local/bin 
+source /root/.db_backupuser
 
 LOGDIR=/usr/sbin/maintenance/logs
 
@@ -12,9 +16,12 @@ LOGNAME=`date +%Y-%m-%d:%H:%M:%S`
 
 ODIR='\/usr\/local\/Wowza.*\/content\/valt_recordings\/video\/.*\/*.tmp'
 
-##################################################################
+DBUSER="${DB_USERNAME}" # DB_USERNAME
+DBPASS="${DB_PASSWORD}" # DB_PASSWORD
+DATABASE="v3"
+#MyHOST=""      # DB_HOSTNAME
 
-export PATH=$PATH:/bin:/usr/bin:/usr/local/bin 
+##################################################################
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
 
@@ -25,14 +32,32 @@ then
 fi
 
 # Check to see if tmp files are open on the server in the Wowza content path
-WOWZAOPEN='lsof -nP | grep $ODIR'
+WOWZAOPEN=`lsof -nP | grep $ODIR`
+
+# Check to see if there are any current recordings running
+SQLQUERY=`mysql -u$DBUSER -p$DBPASS -D $DATABASE -e "SELECT * FROM recordings"`
 
 touch $LOGDIR/$LOGNAME.txt
 echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
-echo "Observation System Maintenance Script"
+echo "Observation System Maintenance Script" >> $LOGDIR/$LOGNAME.txt
 echo "Run on: " >> $LOGDIR/$LOGNAME.txt 
-$DATE >> $LOGDIR/$LOGNAME.txt 
+echo $DATE >> $LOGDIR/$LOGNAME.txt 
 echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
+echo "" >> $LOGDIR/$LOGNAME.txt
+
+echo "Current Open Recordings:" >> $LOGDIR/$LOGNAME.txt
+for OUTPUT in "${WOWZAOPEN[@]}" 
+do	
+	echo -e "$OUTPUT\n" >> $LOGDIR/$LOGNAME.txt
+done
+
+# Check to see if recordings are running, if they are, exit as that will give a false positive
+if [[ ${SQLQUERY} != "" ]]; then
+	echo $SQLQUERY >> $LOGDIR/$LOGNAME.txt
+	echo "Recordings are still running on server"   >> $LOGDIR/$LOGNAME.txt                                                                                                                                     
+	echo "Will not continue - Exit due to recordings"  >> $LOGDIR/$LOGNAME.txt
+	exit 1
+fi       
 
 # If there are open tmp files on the system, restart Wowza and check that Wowza is active
 # Currently on the servers, we can't check using standard service check because it is broken
@@ -42,24 +67,28 @@ if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 	echo "Checking to see they are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
 	echo "------------------------------------------" >> $LOGDIR/$LOGNAME.txt 
 	echo "Rebooting WowzaStreamingEngine"  >> $LOGDIR/$LOGNAME.txt
-	# WOWZARESTART=`service WowzaStreamingEngine restart`
+	WOWZARESTART=`service WowzaStreamingEngine restart`
 	echo $WOWZARESTART >> $LOGDIR/$LOGNAME.txt 
 	sleep 30
-
+	# Checking using curl instead of checking using the service due to
+	# an issue where Wowza Streaming Engine doesn't show the correct
+	# state so this check is better
 	SERVICETEST=`curl localhost:1935`
-	if [ $SERVICETEST == *"Wowza Streaming"* ]; then
+	if [[ $SERVICETEST == *"Wowza Streaming"* ]]; then
+		echo $SERVICETEST >> $LOGDIR/$LOGNAME.txt
 		echo "Wowza reboot was successful"  >> $LOGDIR/$LOGNAME.txt
 	else
 		echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
 		echo "Attempting one more reboot of Wowza"  >> $LOGDIR/$LOGNAME.txt
 		echo "--------------------------------------------" >> $LOGDIR/$LOGNAME.txt 
-		# WOWZARESTART=`service WowzaStreamingEngine restart`
+		WOWZARESTART=`service WowzaStreamingEngine restart`
 		echo $WOWZARESTART >> $LOGDIR/$LOGNAME.txt 
 		sleep 30
 		echo "" >> $LOGDIR/$LOGNAME.txt 
 		echo "Checking Wowza Service"  >> $LOGDIR/$LOGNAME.txt
+		# Second check if Wowza didn't restart properly the first time
 		SERVICETEST=`curl localhost:1935`
-		if [ $SERVICETEST == *"Wowza Streaming"* ]; then
+		if [[ $SERVICETEST == *"Wowza Streaming"* ]]; then
 			echo "Wowza reboot was successful"  >> $LOGDIR/$LOGNAME.txt
 		else
 			echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
@@ -72,3 +101,4 @@ else
 	echo "" >> $LOGDIR/$LOGNAME.txt
 fi
 
+# To Do: Email status after reboot to know if Wowza was rebooted.  (Only email if rebooted.) 
