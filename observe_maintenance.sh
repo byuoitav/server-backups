@@ -71,9 +71,12 @@ fi
 
 # Check to see if recordings are running, if they are, exit as that will give a false positive
 if [[ ${SQLQUERY} != "" ]]; then
+	echo "" >> $LOGDIR/$LOGNAME.txt
+	echo "VALT managed recordings in progress:" >> $LOGDIR/$LOGNAME.txt
 	echo $SQLQUERY >> $LOGDIR/$LOGNAME.txt
+	echo "" >> $LOGDIR/$LOGNAME.txt
 	echo "Recordings are still running on server"   >> $LOGDIR/$LOGNAME.txt                                                                                                                                     
-	echo "Will not continue - Exit due to recordings"  >> $LOGDIR/$LOGNAME.txt
+	echo "Will not continue - Valt currently has recordings in progress"  >> $LOGDIR/$LOGNAME.txt
 	echo "************************************************" >> $LOGDIR/$LOGNAME.txt
 	send_message
 	exit 1
@@ -124,5 +127,6 @@ if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 else
 	echo "" >> $LOGDIR/$LOGNAME.txt
 	echo "No current tmp files are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
+	echo "************************************************" >> $LOGDIR/$LOGNAME.txt
 	echo "" >> $LOGDIR/$LOGNAME.txt
 fi
