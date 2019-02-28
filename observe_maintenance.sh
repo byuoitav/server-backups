@@ -9,6 +9,9 @@
 
 export PATH=$PATH:/bin:/usr/bin:/usr/local/bin 
 source /root/.db_backupuser
+source /etc/environment
+
+HOSTNAME=`uname -n`
 
 LOGDIR=/usr/sbin/maintenance/logs
 
@@ -21,9 +24,15 @@ DBPASS="${DB_PASSWORD}" # DB_PASSWORD
 DATABASE="v3"
 #MyHOST=""      # DB_HOSTNAME
 
-##################################################################
+#Environment Variables --------------------------------
+SLACK_ADDR=${SLACK_POST_ADDRESS}
 
 DATE=`date +%Y-%m-%dT%H:%M:%S%z`
+##################################################################
+
+send_message () {
+	curl -X POST -H --silent --data-urlencode "payload={\"text\": \"$(cat $LOGDIR/$LOGNAME.txt | sed "s/\"/'/g")\"}" $SLACK_ADDR
+}
 
 # Make sure that the log path has already been created, if not create it
 if [ ! -d $LOGDIR ]
@@ -38,6 +47,8 @@ WOWZAOPEN=`lsof -nP | grep $ODIR`
 SQLQUERY=`mysql -u$DBUSER -p$DBPASS -D $DATABASE -e "SELECT * FROM recordings"`
 
 touch $LOGDIR/$LOGNAME.txt
+echo "************************************************" >> $LOGDIR/$LOGNAME.txt
+echo "SERVER NAME: $HOSTNAME" >> $LOGDIR/$LOGNAME.txt
 echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
 echo "Observation System Maintenance Script" >> $LOGDIR/$LOGNAME.txt
 echo "Run on: " >> $LOGDIR/$LOGNAME.txt 
@@ -46,16 +57,25 @@ echo "-----------------------------------------------" >> $LOGDIR/$LOGNAME.txt
 echo "" >> $LOGDIR/$LOGNAME.txt
 
 echo "Current Open Recordings:" >> $LOGDIR/$LOGNAME.txt
-for OUTPUT in "${WOWZAOPEN[@]}" 
-do	
-	echo -e "$OUTPUT\n" >> $LOGDIR/$LOGNAME.txt
-done
+if [[ ${WOWZAOPEN[@]} != "" ]]; then
+	for OUTPUT in "${WOWZAOPEN[@]}" 
+		do	
+			echo -e "$OUTPUT\n" >> /tmp/output.txt
+		done
+
+	cat /tmp/output.txt | awk '{ print $10 }' | sort -u > /tmp/final_list.txt
+	cat /tmp/final_list.txt >> $LOGDIR/$LOGNAME.txt
+else 
+	echo "No Current Recordings......." >> $LOGDIR/$LOGNAME.txt
+fi
 
 # Check to see if recordings are running, if they are, exit as that will give a false positive
 if [[ ${SQLQUERY} != "" ]]; then
 	echo $SQLQUERY >> $LOGDIR/$LOGNAME.txt
 	echo "Recordings are still running on server"   >> $LOGDIR/$LOGNAME.txt                                                                                                                                     
 	echo "Will not continue - Exit due to recordings"  >> $LOGDIR/$LOGNAME.txt
+	echo "************************************************" >> $LOGDIR/$LOGNAME.txt
+	send_message
 	exit 1
 fi       
 
@@ -67,7 +87,7 @@ if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 	echo "Checking to see they are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
 	echo "------------------------------------------" >> $LOGDIR/$LOGNAME.txt 
 	echo "Rebooting WowzaStreamingEngine"  >> $LOGDIR/$LOGNAME.txt
-	WOWZARESTART=`service WowzaStreamingEngine restart`
+	WOWZARESTART=`service WowzaStreamingEngine restart` 
 	echo $WOWZARESTART >> $LOGDIR/$LOGNAME.txt 
 	sleep 30
 	# Checking using curl instead of checking using the service due to
@@ -77,6 +97,8 @@ if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 	if [[ $SERVICETEST == *"Wowza Streaming"* ]]; then
 		echo $SERVICETEST >> $LOGDIR/$LOGNAME.txt
 		echo "Wowza reboot was successful"  >> $LOGDIR/$LOGNAME.txt
+		echo "************************************************" >> $LOGDIR/$LOGNAME.txt
+		send_message
 	else
 		echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
 		echo "Attempting one more reboot of Wowza"  >> $LOGDIR/$LOGNAME.txt
@@ -90,9 +112,13 @@ if [[ (${WOWZAOPEN} != "") && (${WOWZAOPEN} == *"java"*) ]]; then
 		SERVICETEST=`curl localhost:1935`
 		if [[ $SERVICETEST == *"Wowza Streaming"* ]]; then
 			echo "Wowza reboot was successful"  >> $LOGDIR/$LOGNAME.txt
+			echo "************************************************" >> $LOGDIR/$LOGNAME.txt
+			send_message
 		else
 			echo "Wowza reboot was unsuccessful"  >> $LOGDIR/$LOGNAME.txt
 			echo "Please check on the server and the service"  >> $LOGDIR/$LOGNAME.txt
+			echo "************************************************" >> $LOGDIR/$LOGNAME.txt
+			send_message
 		fi
 	fi
 else
@@ -100,5 +126,3 @@ else
 	echo "No current tmp files are open by Wowza"  >> $LOGDIR/$LOGNAME.txt
 	echo "" >> $LOGDIR/$LOGNAME.txt
 fi
-
-# To Do: Email status after reboot to know if Wowza was rebooted.  (Only email if rebooted.) 
