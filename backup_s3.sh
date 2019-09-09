@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Configure the following variables in the /etc/environment file 
+# $BUCKETNAME
+# $STORAGECLASS
+
+source /etc/environment
+
 # directories to backup
 # for each directory to be backed up you must add an output directory
 # These top ones will backup just the application and content folders
